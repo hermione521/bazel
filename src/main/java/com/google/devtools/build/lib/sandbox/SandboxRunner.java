@@ -32,11 +32,12 @@ import java.util.Map;
 /** A common interface of all sandbox runners, no matter which platform they're working on. */
 abstract class SandboxRunner {
 
-  private final boolean verboseFailures;
-  private final Path sandboxExecRoot;
+  private static final String SANDBOX_DEBUG_SUGGESTION =
+      "\n\nUse --sandbox_debug to see verbose messages from the sandbox";
 
-  SandboxRunner(Path sandboxExecRoot, boolean verboseFailures) {
-    this.sandboxExecRoot = sandboxExecRoot;
+  private final boolean verboseFailures;
+
+  SandboxRunner(boolean verboseFailures) {
     this.verboseFailures = verboseFailures;
   }
 
@@ -48,13 +49,15 @@ abstract class SandboxRunner {
    * @param outErr - error output to capture sandbox's and command's stderr
    * @param timeout - after how many seconds should the process be killed
    * @param allowNetwork - whether networking should be allowed for the process
+   * @param sandboxDebug - whether debugging message should be printed
    */
   void run(
       List<String> arguments,
       Map<String, String> environment,
       OutErr outErr,
       int timeout,
-      boolean allowNetwork)
+      boolean allowNetwork,
+      boolean sandboxDebug)
       throws ExecException {
     Command cmd;
     try {
@@ -72,18 +75,31 @@ abstract class SandboxRunner {
           /* killSubprocessOnInterrupt */ true);
     } catch (CommandException e) {
       boolean timedOut = false;
+      TerminationStatus status = null;
       if (e instanceof AbnormalTerminationException) {
-        TerminationStatus status =
+        status =
             ((AbnormalTerminationException) e).getResult().getTerminationStatus();
         timedOut = !status.exited() && (status.getTerminatingSignal() == getSignalOnTimeout());
       }
-      String message =
+      String statusMessage = status + " [sandboxed]";
+      if (!verboseFailures) {
+        // simplest error message
+        throw new UserExecException(statusMessage);
+      }
+      List<String> commandList;
+      if (!sandboxDebug) {
+        commandList = arguments;
+      } else {
+        commandList = Arrays.asList(cmd.getCommandLineElements());
+      }
+      String commandFailureMessage =
           CommandFailureUtils.describeCommandFailure(
-              verboseFailures,
-              Arrays.asList(cmd.getCommandLineElements()),
+              true,
+              commandList,
               environment,
-              sandboxExecRoot.getPathString());
-      throw new UserExecException(message, e, timedOut);
+              null)
+          + (sandboxDebug ? "" : SANDBOX_DEBUG_SUGGESTION);
+      throw new UserExecException(commandFailureMessage, e, timedOut);
     }
   }
 
