@@ -84,7 +84,7 @@ abstract class SandboxRunner {
       String statusMessage = status + " [sandboxed]";
       if (!verboseFailures) {
         // simplest error message
-        throw new UserExecException(statusMessage);
+        throw new UserExecException(statusMessage, e, timedOut);
       }
       List<String> commandList;
       if (!sandboxDebug) {
