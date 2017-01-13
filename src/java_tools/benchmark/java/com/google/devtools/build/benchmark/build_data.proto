@@ -2,23 +2,29 @@ syntax = "proto3";
 
 option java_package = "com.google.devtools.build.benchmark";
 
-message BuildConfig {
+message BuildTargetConfig {
   string description = 1;
   string buildTarget = 2;
   repeated string buildArgs = 3;
   bool cleanBeforeBuild = 4;
+  bool incremental = 5;
+}
+
+message BuildCaseConfig {
+  string codeVersion = 1;
+  repeated BuildTargetConfig buildTargetConfigs = 2;
 }
 
 message BuildTargetResult {
-  BuildConfig config = 1;
+  BuildTargetConfig config = 1;
   double result = 2;
 }
 
 message BuildCaseResult {
   string codeVersion = 1;
-  repeated BuildTargetResult buildCaseResult = 2;
+  repeated BuildTargetResult buildTargetResults = 2;
 }
 
 message BuildGroupResult {
-  repeated BuildCaseResult buildGroupResults = 1;
+  repeated BuildCaseResult buildCaseResults = 1;
 }

@@ -10,6 +10,7 @@ java_library(
     srcs = ["*.java"],
     deps = [
         ":build_data_proto",
-        "//src/main/java/com/google/devtools/build/lib:shell"
+        "//src/main/java/com/google/devtools/build/lib:shell",
+        "//third_party:guava",
     ],
 )
