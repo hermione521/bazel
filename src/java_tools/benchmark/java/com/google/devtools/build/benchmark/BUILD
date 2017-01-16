@@ -5,12 +5,15 @@ java_proto_library(
     src = "build_data.proto",
 )
 
-java_library(
-    name = "builder",
-    srcs = ["*.java"],
+java_binary(
+    name = "benchmark",
+    srcs = glob(["*.java"]),
     deps = [
+        "//src/java_tools/benchmark/java/com/google/devtools/build/benchmark/codegenerator:codegenerator_lib",
         ":build_data_proto",
         "//src/main/java/com/google/devtools/build/lib:shell",
+        "//src/main/java/com/google/devtools/common/options",
         "//third_party:guava",
     ],
+    main_class = "com.google.devtools.build.benchmark.Main",
 )

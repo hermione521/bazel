@@ -4,12 +4,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.devtools.build.benchmark.BuildData.BuildTargetConfig;
 import com.google.devtools.build.lib.shell.Command;
 import com.google.devtools.build.lib.shell.CommandException;
 import com.google.devtools.build.lib.shell.CommandResult;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +32,7 @@ public class BazelBuilder implements Builder{
   }
 
   @Override
-  public ImmutableList<String> getCodeVersionsBetween(String from, String to) {
+  public ImmutableList<String> getCodeVersionsBetween(String from, String to) throws IOException {
     String[] gitLogCommand = {"git", "log", from + ".." + to, "--pretty=format:'%h'", "--reverse"};
     Command cmd = new Command(gitLogCommand, null, builderDir.toFile());
     CommandResult res;
@@ -52,7 +55,7 @@ public class BazelBuilder implements Builder{
 
     // git checkout codeVersion
     String[] checkoutCommand = {"git", "checkout", codeVersion};
-    Command cmd = new Command(buildBazelCommand, null, builderDir.toFile());
+    Command cmd = new Command(checkoutCommand, null, builderDir.toFile());
     try {
       cmd.execute();
     } catch (CommandException e) {
@@ -82,13 +85,18 @@ public class BazelBuilder implements Builder{
 
   @Override
   public ImmutableList<String> getCommandFromConfig(BuildTargetConfig config) {
-    return ImmutableList.of("build", config.getBuildTarget(), config.getBuildArgsList);
+    ImmutableList.Builder<String> builder = ImmutableList.builder();
+    return builder
+        .add("build")
+        .add(config.getBuildTarget())
+        .addAll(config.getBuildArgsList())
+        .build();
   }
 
   @Override
   public double buildAndGetElapsedTime(Path buildBinary, ImmutableList<String> args) throws IOException {
     List<String> cmdList = new ArrayList();
-    cmdList.add(buildBinary);
+    cmdList.add(buildBinary.toString());
     cmdList.addAll(args);
     String[] cmdArr = new String[cmdList.size()];
     cmdArr = cmdList.toArray(cmdArr);
@@ -106,7 +114,7 @@ public class BazelBuilder implements Builder{
     String output = new String(res.getStdout(), UTF_8).trim();
     String pattern = "(?<=INFO: Elapsed time: )[0-9.]+";
     Pattern r = Pattern.compile(pattern);
-    Matcher m = r.matcher(line);
+    Matcher m = r.matcher(output);
 
     double elapsedTime = -1;
     if (m.find()) {
@@ -120,7 +128,7 @@ public class BazelBuilder implements Builder{
   }
 
   @Override
-  public void clean() throws IOException{
+  public void clean() throws IOException {
     String[] cleanCommand = {"bazel", "clean"};
     Command cmd = new Command(cleanCommand, null, builderDir.toFile());
     try {
@@ -131,15 +139,23 @@ public class BazelBuilder implements Builder{
   }
 
   @Override
-  public void prepare() {
+  public void prepare() throws IOException {
     if (!builderDir.toFile().isDirectory()) {
-      Files.delete(builderDir);
+      try {
+        Files.delete(builderDir);
+      } catch (IOException e) {
+        throw new IOException(builderDir + "is a file and cannot be deleted", e);
+      }
     }
     if (Files.notExists(builderDir)) {
-      Files.createDirectories(builderDir);
+      try {
+        Files.createDirectories(builderDir);
+      } catch (IOException e) {
+        throw new IOException("Failed to create directory for bazel", e);
+      }
 
       String[] gitCloneCommand = {"git", "clone", "https://github.com/bazelbuild/bazel.git"};
-      Command cmd = new Command(cleanCommand, null, builderDir.toFile());
+      Command cmd = new Command(gitCloneCommand, null, builderDir.toFile());
       try {
         cmd.execute();
       } catch (CommandException e) {

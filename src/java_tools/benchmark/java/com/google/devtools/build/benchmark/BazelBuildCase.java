@@ -1,5 +1,10 @@
 package com.google.devtools.build.benchmark;
 
+import com.google.common.collect.ImmutableList;
+import com.google.devtools.build.benchmark.BuildData.BuildTargetConfig;
+
+import java.io.IOException;
+
 public class BazelBuildCase implements BuildCase {
 
   private static final ImmutableList<String> BUILD_TARGET_NAMES = ImmutableList.of(
@@ -11,13 +16,13 @@ public class BazelBuildCase implements BuildCase {
   private ImmutableList<BuildTargetConfig> buildTargetConfigs = null;
 
   @Override
-  public ImmutatbleList<String> getCodeVersions(Builder builder, String from, String to) {
+  public ImmutableList<String> getCodeVersions(Builder builder, String from, String to) throws IOException {
     return builder.getCodeVersionsBetween(from, to);
   }
 
   @Override
   public ImmutableList<BuildTargetConfig> getBuildTargetConfigs() {
-    if (buildTargetConfigs != nul) {
+    if (buildTargetConfigs != null) {
       return buildTargetConfigs;
     }
 
@@ -26,7 +31,7 @@ public class BazelBuildCase implements BuildCase {
     // BuildTargetConfig = EnvironmentConfig * TargetConfig
     ImmutableList<BuildTargetConfig.Builder> configList = ImmutableList.of(
         fullCleanBuildConfig(),
-        incrementalBuildConfig);
+        incrementalBuildConfig());
     for (BuildTargetConfig.Builder builder : configList) {
       String description = builder.getDescription();
       for (String targetName : BUILD_TARGET_NAMES) {
@@ -38,26 +43,22 @@ public class BazelBuildCase implements BuildCase {
       }
     }
 
-    buildTargetConfigs = resultBuilder.build()
+    buildTargetConfigs = resultBuilder.build();
     return buildTargetConfigs;
   }
 
   private BuildTargetConfig.Builder fullCleanBuildConfig() {
-    BuildTargetConfig.Builder builder = BuildTargetConfig.builder();
-    builder
+    return BuildTargetConfig.newBuilder()
         .setDescription("Full clean build")
         .setCleanBeforeBuild(true)
         .setIncremental(false);
-    return builder;
   }
 
   private BuildTargetConfig.Builder incrementalBuildConfig() {
-    BuildTargetConfig.Builder builder = BuildTargetConfig.builder();
-    builder
+    return BuildTargetConfig.newBuilder()
         .setDescription("Incremental build")
         .setCleanBeforeBuild(false)
         .setIncremental(true);
-    return builder;
   }
 
 }

@@ -24,7 +24,7 @@ public class JavaCodeGenerator {
   static final int SIZE_PARALLEL_DEPS = 20;
 
 
-  static void generateNewProject(String outputDir,
+  public static void generateNewProject(String outputDir,
       boolean aFewFiles, boolean manyFiles, boolean longChainedDeps, boolean parallelDeps) {
     Path dir = Paths.get(outputDir);
     if (aFewFiles) {
@@ -41,7 +41,7 @@ public class JavaCodeGenerator {
     }
   }
 
-  static void modifyExistingProject(String outputDir,
+  public static void modifyExistingProject(String outputDir,
       boolean aFewFiles, boolean manyFiles, boolean longChainedDeps, boolean parallelDeps) {
     Path dir = Paths.get(outputDir);
     if (aFewFiles) {

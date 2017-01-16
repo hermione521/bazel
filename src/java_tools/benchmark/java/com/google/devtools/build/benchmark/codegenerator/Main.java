@@ -4,8 +4,12 @@ import com.google.devtools.common.options.Options;
 import com.google.devtools.common.options.OptionsParsingException;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
+
+  private static final Logger logger = Logger.getLogger(Main.class.getName());
 
   public static void main(String[] args) {
 
@@ -13,7 +17,7 @@ public class Main {
     try {
       opt = Options.parse(GeneratorOptions.class, args).getOptions();
     } catch (OptionsParsingException e) {
-      System.err.println(e.getMessage());
+      logger.log(Level.SEVERE, e.getMessage());
       System.exit(1);
     }
 
@@ -26,14 +30,14 @@ public class Main {
     if ("modify".equals(opt.mode)) {
       File dir = new File(opt.outputDir);
       if (!(dir.exists() && dir.isDirectory())) {
-        System.err.format("output_dir (%s) does not contain code for modification.\n", opt.outputDir);
+        logger.log(Level.SEVERE, "output_dir (%s) does not contain code for modification.\n", opt.outputDir);
         System.exit(1);
       }
     }
     // Check at least one type of package will be generated
     if (!(opt.aFewFiles || opt.manyFiles || opt.longChainedDeps
         || opt.paralledDeps)) {
-      System.err.println("No type of package is specified.");
+      logger.log(Level.SEVERE, "No type of package is specified.");
       System.err.println(Options.getUsage(GeneratorOptions.class));
       System.exit(1);
     }

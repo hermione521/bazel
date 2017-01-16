@@ -11,7 +11,7 @@ java_binary(
 )
 
 java_library(
-    name = "codegenerator_testlib",
+    name = "codegenerator_lib",
     srcs = glob(["*.java"]),
     deps = [
         "//src/main/java/com/google/devtools/common/options",
